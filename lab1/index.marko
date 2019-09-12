@@ -1,0 +1,67 @@
+class {
+    onCreate() {
+        this.state = {
+            apiKey:'',
+            cities:[],
+            key:'',
+            temp:''
+        };
+    }
+
+    find() {
+        var city = this.getEl('city').value;
+        var url = "http://dataservice.accuweather.com/locations/v1/cities/search?apikey=" + this.state.apiKey + "&q=" + city;
+
+        fetch(url)
+            .then(data => data.json())
+            .then(json => {
+                this.state.cities = json
+            });
+    }
+
+    select(cityKey) {
+        var url = "http://dataservice.accuweather.com/currentconditions/v1/" + cityKey + "?apikey=" + this.state.apiKey;
+        
+        var tempPromise = fetch(url)
+            .then(data => data.json())
+            .then(json => {
+                this.state.temp = json[0].Temperature.Metric.Value;
+            });
+    }
+}
+
+style {
+    .count {
+        color:#09c;
+        font-size:3em;
+    }
+    .example-button {
+        font-size:1em;
+        padding:0.5em;
+    }
+}
+
+<div.count>
+    Choose city
+</div>
+
+<input key="city" placeholder="Search"/>
+<button on-click("find")>Submit</button>
+
+<ol>
+    <for|city| of=state.cities>
+        <li>
+            <button on-click("select", "${city.Key}")>
+                ${city.EnglishName}, ${city.AdministrativeArea.EnglishName}, ${city.Country.EnglishName}
+            </button>
+        </li>
+    </for>
+</ol>
+
+<div.count>
+    ${state.key}
+</div>
+
+<div.count>
+    ${state.temp}
+</div>
