@@ -3,12 +3,28 @@ class {
         this.state = {
             apiKey:'',
             cities:[],
-            key:'',
-            temp:''
+            temperature:'',
+            weather: '',
+            photo: null,
+            precipitation: '',
+            wind : {
+                direction: '',
+                speed: ''
+            }
         };
     }
 
+    // clear() {
+    //     this.state.temperature = '';
+    //     this.state.weather = '';
+    //     this.state.photo = null;
+    // }
+
     find() {
+        this.state.temperature = '';
+        this.state.weather = '';
+        this.state.photo = null;
+
         var city = this.getEl('city').value;
         var url = "http://dataservice.accuweather.com/locations/v1/cities/search?apikey=" + this.state.apiKey + "&q=" + city;
 
@@ -20,28 +36,61 @@ class {
     }
 
     select(cityKey) {
-        var url = "http://dataservice.accuweather.com/currentconditions/v1/" + cityKey + "?apikey=" + this.state.apiKey;
+        this.state.temperature = '';
+        this.state.weather = '';
+        this.state.photo = null;
+
+        var url = "http://dataservice.accuweather.com/currentconditions/v1/" + cityKey + "?apikey=" + this.state.apiKey + "&details=true&getPhotos=true";
         
-        var tempPromise = fetch(url)
+        fetch(url)
             .then(data => data.json())
             .then(json => {
-                this.state.temp = json[0].Temperature.Metric.Value;
+                this.state.temperature = json[0].Temperature.Metric.Value;
+                this.state.weather = json[0].WeatherText;
+                this.state.photo = json[0].Photos[0].LandscapeLink;
+                this.state.precipitation = json[0].PrecipitationType !== null 
+                                            ? json[0].PrecipitationType
+                                            : "No precipitation";
+                this.state.wind.direction = json[0].Wind.Direction.English; 
+                this.state.wind.speed = json[0].Wind.Speed.Metric.Value;
             });
     }
 }
 
 style {
-    .count {
+    .text {
         color:#09c;
         font-size:3em;
     }
-    .example-button {
-        font-size:1em;
-        padding:0.5em;
+
+    .img-block{
+        position:relative;
+        overflow:hidden;
+        float:left;
+        margin:0 10px;
+    }
+    
+    .img-block div {
+        position:absolute;
+        top:0;
+        left:0;
+        background:rgba(0,0,0,0.5);
+        padding:5px;
+        font-size:54px;
+        color:#fff;
+        font-weight:700;
+        text-align:left;
+    }
+
+    .img-block img {
+        padding:0;
+        width:100%;
+        margin:0;
+        height:auto;
     }
 }
 
-<div.count>
+<div.text>
     Choose city
 </div>
 
@@ -51,17 +100,26 @@ style {
 <ol>
     <for|city| of=state.cities>
         <li>
-            <button on-click("select", "${city.Key}")>
-                ${city.EnglishName}, ${city.AdministrativeArea.EnglishName}, ${city.Country.EnglishName}
-            </button>
+            <a href="#weather">
+                <button on-click("select", "${city.Key}")>
+                    ${city.EnglishName}, ${city.AdministrativeArea.EnglishName}, ${city.Country.EnglishName}
+                </button>
+            </a>           
         </li>
     </for>
 </ol>
 
-<div.count>
-    ${state.key}
-</div>
+<if(state.photo !== null)>
+    <div id="weather" class="img-block"> 
+        <div>
+            ${state.temperature + " °C"} <br/>
+            ${state.weather} <br/>
+            ${state.precipitation} <br/>
+            ${"Wind " + state.wind.speed + " km/h " + state.wind.direction}
+        </div>
+        
+        <img src="${state.photo}" alt="city photo"> 
+    </div>
+</if>
 
-<div.count>
-    ${state.temp}
-</div>
+
